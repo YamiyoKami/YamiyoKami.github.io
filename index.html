@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OFFSEC // Bug Bounty Learning Path</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e0a;
+    --panel:#0f160f;
+    --panel2:#121b12;
+    --line:#1f3320;
+    --green:#39ff14;
+    --green-dim:#2bbf10;
+    --amber:#ffb000;
+    --red:#ff3b3b;
+    --text:#c8e6c8;
+    --muted:#5e7a5e;
+    --cyan:#1de0d0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    line-height:1.6;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(57,255,20,.06), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(29,224,208,.05), transparent 40%),
+      repeating-linear-gradient(0deg, rgba(57,255,20,.018) 0px, rgba(57,255,20,.018) 1px, transparent 1px, transparent 3px);
+    min-height:100vh;
+  }
+  ::selection{background:var(--green);color:#000}
+  a{color:var(--cyan);text-decoration:none;border-bottom:1px dotted var(--cyan)}
+  a:hover{color:var(--green);border-bottom-color:var(--green)}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+
+  /* HEADER */
+  header{
+    border-bottom:1px solid var(--line);
+    padding:48px 0 32px;
+    position:relative;
+    overflow:hidden;
+  }
+  .term-bar{
+    display:flex;align-items:center;gap:8px;
+    font-family:'Space Mono';font-size:12px;color:var(--muted);
+    margin-bottom:28px;
+  }
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .dot.r{background:var(--red)}.dot.y{background:var(--amber)}.dot.g{background:var(--green-dim)}
+  .term-bar span{margin-left:10px}
+  h1{
+    font-size:clamp(28px,6vw,52px);
+    font-weight:800;letter-spacing:-1px;line-height:1.05;
+    color:var(--green);
+    text-shadow:0 0 18px rgba(57,255,20,.35);
+  }
+  h1 .blink{animation:blink 1.1s steps(1) infinite;color:var(--green)}
+  @keyframes blink{50%{opacity:0}}
+  .sub{color:var(--muted);font-size:14px;margin-top:14px;max-width:640px}
+  .sub b{color:var(--text)}
+
+  /* PROGRESS DASH */
+  .dash{
+    margin-top:34px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:22px 24px;
+  }
+  .dash-top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+  .dash-label{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+  .dash-pct{font-size:30px;font-weight:800;color:var(--green);text-shadow:0 0 12px rgba(57,255,20,.4)}
+  .bar{height:14px;background:#08120 8;background:#081208;border:1px solid var(--line);border-radius:2px;margin-top:14px;overflow:hidden;position:relative}
+  .bar-fill{height:100%;width:0;background:linear-gradient(90deg,var(--green-dim),var(--green));transition:width .5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 10px rgba(57,255,20,.6)}
+  .dash-meta{display:flex;gap:24px;margin-top:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .dash-meta b{color:var(--text)}
+  .reset-btn{
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    font-family:inherit;font-size:11px;padding:5px 12px;border-radius:3px;cursor:pointer;
+    letter-spacing:1px;transition:.2s;
+  }
+  .reset-btn:hover{border-color:var(--red);color:var(--red)}
+
+  /* PHASE NAV */
+  nav.phases{display:flex;gap:8px;flex-wrap:wrap;margin:34px 0 10px}
+  nav.phases a{
+    font-size:11px;letter-spacing:1px;padding:7px 12px;border:1px solid var(--line);
+    border-radius:3px;color:var(--muted);border-bottom:1px solid var(--line);
+  }
+  nav.phases a:hover{color:var(--green);border-color:var(--green-dim)}
+
+  /* PHASE */
+  .phase{margin:40px 0;scroll-margin-top:20px}
+  .phase-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:8px}
+  .phase-num{
+    font-size:13px;font-weight:800;color:#000;background:var(--green);
+    padding:3px 9px;border-radius:3px;white-space:nowrap;margin-top:4px;
+    box-shadow:0 0 14px rgba(57,255,20,.4);
+  }
+  .phase-title{font-size:clamp(20px,4vw,28px);font-weight:700;color:var(--text);letter-spacing:-.5px}
+  .phase-goal{color:var(--muted);font-size:13px;margin:2px 0 0 0}
+  .phase-time{display:inline-block;font-size:11px;color:var(--amber);border:1px solid rgba(255,176,0,.3);padding:2px 8px;border-radius:3px;margin-top:10px;letter-spacing:1px}
+  .phase-prog{font-size:11px;color:var(--muted);float:right;margin-top:6px}
+
+  /* TASK CARD */
+  .task{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--line);
+    border-radius:4px;
+    padding:16px 18px;
+    margin-top:12px;
+    display:flex;gap:14px;align-items:flex-start;
+    transition:.25s;
+  }
+  .task:hover{border-color:var(--green-dim);background:var(--panel2)}
+  .task.done{border-left-color:var(--green);opacity:.62}
+  .task.done .task-title{text-decoration:line-through;color:var(--muted)}
+  .chk{
+    flex-shrink:0;width:22px;height:22px;border:1.5px solid var(--green-dim);
+    border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    margin-top:2px;transition:.18s;background:transparent;font-size:14px;color:#000;
+  }
+  .chk:hover{box-shadow:0 0 8px rgba(57,255,20,.5)}
+  .task.done .chk{background:var(--green);border-color:var(--green)}
+  .chk::after{content:'✓';opacity:0;font-weight:800}
+  .task.done .chk::after{opacity:1}
+  .task-body{flex:1;min-width:0}
+  .task-title{font-size:15px;font-weight:500;color:var(--text);display:block}
+  .task-desc{font-size:12.5px;color:var(--muted);margin-top:5px}
+  .task-links{margin-top:9px;display:flex;flex-wrap:wrap;gap:6px}
+  .task-links a{
+    font-size:11px;border:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:3px 9px;border-radius:3px;color:var(--cyan);
+  }
+  .task-links a:hover{border-color:var(--green);color:var(--green)}
+  .task-links a::before{content:'→ '}
+  .tag{font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:3px;text-transform:uppercase;font-weight:700}
+  .tag.free{background:rgba(57,255,20,.12);color:var(--green)}
+  .tag.paid{background:rgba(255,176,0,.12);color:var(--amber)}
+  .tag.core{background:rgba(29,224,208,.12);color:var(--cyan)}
+
+  /* VIDEO */
+  .video{margin:14px 0;border:1px solid var(--line);border-radius:5px;overflow:hidden;background:#000}
+  .video-cap{font-size:11px;color:var(--muted);padding:8px 12px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .video-frame{position:relative;padding-bottom:56.25%;height:0}
+  .video-frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+
+  /* CALLOUT */
+  .callout{
+    background:var(--panel2);border:1px dashed var(--line);border-radius:4px;
+    padding:14px 18px;margin-top:14px;font-size:12.5px;color:var(--muted);
+  }
+  .callout b{color:var(--amber)}
+  .callout.tip b{color:var(--green)}
+
+  /* SECTION DIVIDER */
+  .div-note{color:var(--muted);font-size:12px;margin:6px 0 0;font-family:'Space Mono'}
+
+  footer{border-top:1px solid var(--line);margin-top:60px;padding:30px 0 50px;color:var(--muted);font-size:11.5px}
+  footer b{color:var(--text)}
+  .glow-line{height:1px;background:linear-gradient(90deg,transparent,var(--green),transparent);margin:0}
+
+  /* milestone banner */
+  .milestone{
+    background:linear-gradient(135deg,rgba(57,255,20,.07),rgba(29,224,208,.05));
+    border:1px solid var(--green-dim);border-radius:4px;padding:16px 20px;margin:14px 0;
+    font-size:13px;
+  }
+  .milestone b{color:var(--green)}
+  .ascii{font-family:'Space Mono';font-size:10px;color:var(--green-dim);white-space:pre;line-height:1.2;opacity:.5;margin-top:20px;overflow-x:auto}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="term-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span>root@offsec:~/path$ ./launch --target=bug_bounty</span>
+    </div>
+    <h1>FROM SOC-CURIOUS<br>TO BUG HUNTER<span class="blink">_</span></h1>
+    <p class="sub">A structured offensive-security roadmap. You start with the <b>Google Cybersecurity Certificate</b> foundation; you finish ready to submit on <b>HackerOne / Bugcrowd / Intigriti</b>. Built around web app hacking — the highest-ROI track for solo hunters juggling academics. Pace it however your semester allows.</p>
+
+    <div class="dash">
+      <div class="dash-top">
+        <span class="dash-label">// overall completion</span>
+        <span class="dash-pct" id="pct">0%</span>
+      </div>
+      <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+      <div class="dash-meta">
+        <span><b id="doneCount">0</b> / <b id="totalCount">0</b> tasks cleared</span>
+        <span>phase: <b id="curPhase">—</b></span>
+        <button class="reset-btn" onclick="resetAll()">[ reset progress ]</button>
+      </div>
+    </div>
+
+    <nav class="phases">
+      <a href="#p0">00 / FUNDAMENTALS</a>
+      <a href="#p1">01 / WEB ATTACKS</a>
+      <a href="#p2">02 / TOOLING</a>
+      <a href="#p3">03 / RECON</a>
+      <a href="#p4">04 / PRACTICE</a>
+      <a href="#p5">05 / GO LIVE</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+
+  <!-- PHASE 0 -->
+  <section class="phase" id="p0">
+    <div class="phase-head">
+      <span class="phase-num">00</span>
+      <div>
+        <div class="phase-title">Bridge the Fundamentals <span class="phase-prog" data-prog="p0"></span></div>
+        <p class="phase-goal">Your Google cert covers SOC/blue-team basics. Fill the offensive prerequisites: how the web actually works under the hood + comfort in a Linux shell.</p>
+        <span class="phase-time">⏱ 2–4 weeks · part-time</span>
+      </div>
+    </div>
+
+    <div class="task" data-id="t01">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Master HTTP, DNS, cookies & the request/response cycle <span class="tag core">core</span></span>
+        <p class="task-desc">Everything in web hacking is manipulating a request. Read MDN on HTTP, then NahamSec's "getting started" notes on networking, DNS records, and why HTML structure matters for input/output.</p>
+        <div class="task-links">
+          <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP" target="_blank">MDN HTTP Guide</a>
+          <a href="https://www.nahamsec.com/getting-started-in-bug-bounty" target="_blank">NahamSec: Getting Started</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t02">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Get fluent in Linux & the command line <span class="tag free">free</span></span>
+        <p class="task-desc">You'll live in a terminal. Work through Linux Journey, then play OverTheWire's Bandit wargame — it teaches shell skills as a hacking puzzle (SSH, pipes, grep, find).</p>
+        <div class="task-links">
+          <a href="https://linuxjourney.com/" target="_blank">Linux Journey</a>
+          <a href="https://overthewire.org/wargames/bandit/" target="_blank">OverTheWire: Bandit</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t03">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Read enough JavaScript & basic Python to be dangerous <span class="tag core">core</span></span>
+        <p class="task-desc">You don't need to be a dev. You need to <i>read</i> client-side JS (to spot logic & hidden endpoints) and write small Python scripts to automate. Skim, don't grind.</p>
+        <div class="task-links">
+          <a href="https://javascript.info/" target="_blank">The Modern JS Tutorial</a>
+          <a href="https://automatetheboringstuff.com/" target="_blank">Automate the Boring Stuff (Python)</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="video">
+      <div class="video-cap">▶ NahamSec — The No-BS Bug Bounty & Web Hacking Roadmap (15 min — watch this first)</div>
+      <div class="video-frame"><iframe src="https://www.youtube.com/embed/2c9BHQzu5gc" title="NahamSec Roadmap" allowfullscreen loading="lazy"></iframe></div>
+    </div>
+  </section>
+
+  <div class="glow-line"></div>
+
+  <!-- PHASE 1 -->
+  <section class="phase" id="p1">
+    <div class="phase-head">
+      <span class="phase-num">01</span>
+      <div>
+        <div class="phase-title">Learn the Web Vulnerabilities <span class="phase-prog" data-prog="p1"></span></div>
+        <p class="phase-goal">The heart of the path. PortSwigger's free Web Security Academy is the gold-standard — 190+ interactive labs maintained by the team that builds Burp Suite. This is where most of your hours go.</p>
+        <span class="phase-time">⏱ 2–4 months · the main grind</span>
+      </div>
+    </div>
+
+    <div class="milestone">🎯 <b>Strategy:</b> Don't do labs randomly. Follow PortSwigger's structured <a href="https://portswigger.net/web-security/learning-paths" target="_blank">Learning Paths</a> in order. If a lab stumps you for 30+ min, read the solution, understand it, move on — come back later.</div>
+
+    <div class="task" data-id="t11">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">PortSwigger: Server-side topics (SQLi, auth, path traversal, command injection, SSRF, file upload) <span class="tag free">free</span> <span class="tag core">core</span></span>
+        <p class="task-desc">Start the server-side path. SQL injection and access-control bugs are among the most-reported, highest-paying classes for beginners.</p>
+        <div class="task-links">
+          <a href="https://portswigger.net/web-security/learning-paths" target="_blank">WSA Learning Paths</a>
+          <a href="https://portswigger.net/web-security/all-topics" target="_blank">All Topics Index</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t12">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">PortSwigger: Client-side topics (XSS, CSRF, CORS, clickjacking, DOM) <span class="tag free">free</span> <span class="tag core">core</span></span>
+        <p class="task-desc">Cross-site scripting is the single most common bug bounty finding. Grind every XSS lab until reflected/stored/DOM variants feel automatic.</p>
+        <div class="task-links">
+          <a href="https://portswigger.net/web-security/cross-site-scripting" target="_blank">XSS Labs</a>
+          <a href="https://portswigger.net/web-security/csrf" target="_blank">CSRF Labs</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t13">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">PortSwigger: Advanced topics (access control / IDOR, business logic, request smuggling) <span class="tag free">free</span></span>
+        <p class="task-desc">IDOR and broken access control are beginner-friendly to find and consistently pay out. Business-logic flaws need no fancy payloads — just creative thinking.</p>
+        <div class="task-links">
+          <a href="https://portswigger.net/web-security/access-control" target="_blank">Access Control / IDOR</a>
+          <a href="https://portswigger.net/web-security/logic-flaws" target="_blank">Business Logic Flaws</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t14">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Read the OWASP Top 10 & keep WSTG as a reference <span class="tag free">free</span></span>
+        <p class="task-desc">Frame everything you learn against OWASP's vulnerability taxonomy. The Web Security Testing Guide (WSTG) is your methodical checklist for "what do I test on this page?"</p>
+        <div class="task-links">
+          <a href="https://owasp.org/www-project-top-ten/" target="_blank">OWASP Top 10</a>
+          <a href="https://owasp.org/www-project-web-security-testing-guide/" target="_blank">OWASP WSTG</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t15">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Read "The Web Application Hacker's Handbook" (or Bug Bounty Bootcamp) <span class="tag paid">paid</span></span>
+        <p class="task-desc">WAHH is the classic deep reference (written by PortSwigger's founders). "Bug Bounty Bootcamp" by Vickie Li is the more modern, bounty-focused alternative if you want one book.</p>
+        <div class="task-links">
+          <a href="https://nostarch.com/bug-bounty-bootcamp" target="_blank">Bug Bounty Bootcamp (No Starch)</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="glow-line"></div>
+
+  <!-- PHASE 2 -->
+  <section class="phase" id="p2">
+    <div class="phase-head">
+      <span class="phase-num">02</span>
+      <div>
+        <div class="phase-title">Build Your Toolkit <span class="phase-prog" data-prog="p2"></span></div>
+        <p class="phase-goal">Tools don't find bugs — you do. But you must be fluent with the proxy that sits between your browser and the target. Everything routes through Burp (or Caido).</p>
+        <span class="phase-time">⏱ runs parallel to Phase 01</span>
+      </div>
+    </div>
+
+    <div class="task" data-id="t21">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Set up & learn Burp Suite (Community is free) <span class="tag core">core</span></span>
+        <p class="task-desc">Intercept, Repeater, Intruder, and the Proxy history are your bread and butter. 87% of HackerOne hunters call it the tool that helps most. Caido is a lighter modern alternative worth trying.</p>
+        <div class="task-links">
+          <a href="https://portswigger.net/burp/documentation/desktop/getting-started" target="_blank">Burp Getting Started</a>
+          <a href="https://caido.io/" target="_blank">Caido (alternative)</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t22">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Set up a Kali / hacking VM with the core CLI tools <span class="tag free">free</span></span>
+        <p class="task-desc">Install the ProjectDiscovery suite (subfinder, httpx, nuclei, katana, naabu), plus ffuf, and SecLists wordlists. These power your recon in Phase 03.</p>
+        <div class="task-links">
+          <a href="https://www.kali.org/get-kali/" target="_blank">Get Kali Linux</a>
+          <a href="https://github.com/projectdiscovery" target="_blank">ProjectDiscovery Tools</a>
+          <a href="https://github.com/danielmiessler/SecLists" target="_blank">SecLists</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t23">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Learn ffuf & Nuclei properly <span class="tag free">free</span></span>
+        <p class="task-desc">ffuf for content/parameter fuzzing once you have a hypothesis; Nuclei for fast template-based scanning of known issues. Use them sparingly and legally within scope.</p>
+        <div class="task-links">
+          <a href="https://github.com/ffuf/ffuf" target="_blank">ffuf</a>
+          <a href="https://docs.projectdiscovery.io/tools/nuclei/overview" target="_blank">Nuclei Docs</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">💡 <b>Tip:</b> Resist "tool collector" syndrome. A hunter who deeply knows Burp + ffuf + the ProjectDiscovery suite beats one with 50 half-understood scripts.</div>
+  </section>
+
+  <div class="glow-line"></div>
+
+  <!-- PHASE 3 -->
+  <section class="phase" id="p3">
+    <div class="phase-head">
+      <span class="phase-num">03</span>
+      <div>
+        <div class="phase-title">Recon & Methodology <span class="phase-prog" data-prog="p3"></span></div>
+        <p class="phase-goal">Labs hand you the vulnerable page. Real targets don't. Recon is the skill of mapping a target's attack surface — finding the subdomain, endpoint, or forgotten app nobody else looked at.</p>
+        <span class="phase-time">⏱ 3–6 weeks · ongoing skill</span>
+      </div>
+    </div>
+
+    <div class="video">
+      <div class="video-cap">▶ NahamSec — Free Recon Course & Methodology for Bug Bounty Hunters (2025)</div>
+      <div class="video-frame"><iframe src="https://www.youtube.com/embed/evyxNUzl-HA" title="NahamSec Recon Course" allowfullscreen loading="lazy"></iframe></div>
+    </div>
+
+    <div class="task" data-id="t31">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Learn subdomain enumeration & endpoint discovery <span class="tag core">core</span></span>
+        <p class="task-desc">subfinder/amass for subdomains → httpx to probe live hosts → katana/waybackurls for endpoints → ffuf for hidden content. Understand <i>why</i> each step matters, not just the commands.</p>
+        <div class="task-links">
+          <a href="https://www.nahamsec.com/getting-started-in-bug-bounty" target="_blank">NahamSec Recon Notes</a>
+          <a href="https://github.com/owasp-amass/amass" target="_blank">OWASP Amass</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t32">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Study Jhaddix's "The Bug Hunter's Methodology" <span class="tag free">free</span> <span class="tag core">core</span></span>
+        <p class="task-desc">The canonical talk on building a repeatable end-to-end hunting process. Watch it, then write your own methodology checklist in a notes doc.</p>
+        <div class="task-links">
+          <a href="https://github.com/nahamsec/Resources-for-Beginner-Bug-Bounty-Hunters" target="_blank">Beginner Resources (NahamSec)</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t33">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Learn GitHub dorking, Google dorking & Shodan <span class="tag free">free</span></span>
+        <p class="task-desc">Exposed API keys, credentials, and config files in public repos are easy, real findings. Shodan reveals exposed services and infrastructure.</p>
+        <div class="task-links">
+          <a href="https://www.exploit-db.com/google-hacking-database" target="_blank">Google Hacking DB</a>
+          <a href="https://www.shodan.io/" target="_blank">Shodan</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="glow-line"></div>
+
+  <!-- PHASE 4 -->
+  <section class="phase" id="p4">
+    <div class="phase-head">
+      <span class="phase-num">04</span>
+      <div>
+        <div class="phase-title">Deliberate Practice on Real-ish Targets <span class="phase-prog" data-prog="p4"></span></div>
+        <p class="phase-goal">Bridge the gap between guided labs and live programs. These platforms give you full, intentionally-vulnerable machines & apps — the closest thing to a real target with a safety net.</p>
+        <span class="phase-time">⏱ 1–3 months · build the reps</span>
+      </div>
+    </div>
+
+    <div class="task" data-id="t41">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Grind PentesterLab / Hack The Box web tracks <span class="tag paid">paid</span></span>
+        <p class="task-desc">HTB's "Bug Bounty Hunter" job-role path and PentesterLab's web badges give structured, escalating challenges. Great for turning lab knowledge into instinct.</p>
+        <div class="task-links">
+          <a href="https://www.hackthebox.com/" target="_blank">Hack The Box</a>
+          <a href="https://pentesterlab.com/" target="_blank">PentesterLab</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t42">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Do free rooms on TryHackMe & HackingHub <span class="tag free">free</span></span>
+        <p class="task-desc">TryHackMe's web fundamentals & OWASP rooms are beginner-gentle. HackingHub (NahamSec-backed) offers free bug-bounty-style challenges.</p>
+        <div class="task-links">
+          <a href="https://tryhackme.com/" target="_blank">TryHackMe</a>
+          <a href="https://www.hackinghub.io/" target="_blank">HackingHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t43">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Start a hunting journal & write practice reports <span class="tag core">core</span></span>
+        <p class="task-desc">For every bug you find in practice, write a real vulnerability report: title, severity, steps to reproduce, impact, remediation. Report-writing is a graded skill on every platform.</p>
+        <div class="task-links">
+          <a href="https://docs.hackerone.com/en/articles/8369826-submitting-reports" target="_blank">HackerOne Report Guide</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="milestone">🏁 <b>Readiness check:</b> Can you take a fresh THM/HTB web box, recon it, find 2–3 vuln classes unaided, and write a clean report? If yes — you're ready for live programs.</div>
+  </section>
+
+  <div class="glow-line"></div>
+
+  <!-- PHASE 5 -->
+  <section class="phase" id="p5">
+    <div class="phase-head">
+      <span class="phase-num">05</span>
+      <div>
+        <div class="phase-title">Go Live — Your First Real Bounties <span class="phase-prog" data-prog="p5"></span></div>
+        <p class="phase-goal">The leap. Pick programs wisely, stay strictly in scope, manage expectations (your first valid bug may take weeks of duplicates and N/As — that's normal), and iterate.</p>
+        <span class="phase-time">⏱ ongoing · the real game</span>
+      </div>
+    </div>
+
+    <div class="task" data-id="t51">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Register on HackerOne, Bugcrowd & Intigriti <span class="tag core">core</span></span>
+        <p class="task-desc">Create accounts and read each platform's hacker docs & code of conduct. Intigriti and HackerOne are commonly recommended starting points for newcomers.</p>
+        <div class="task-links">
+          <a href="https://www.hackerone.com/" target="_blank">HackerOne</a>
+          <a href="https://www.bugcrowd.com/" target="_blank">Bugcrowd</a>
+          <a href="https://www.intigriti.com/" target="_blank">Intigriti</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t52">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Pick ONE program with broad web scope & read the full policy <span class="tag core">core</span></span>
+        <p class="task-desc">Don't scatter. Choose a program with a wide scope (lots of subdomains = more surface), read the scope doc carefully, then spend a session just <i>mapping</i> — no exploitation, pure observation.</p>
+        <div class="task-links">
+          <a href="https://hackerone.com/directory/programs" target="_blank">HackerOne Program Directory</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t53">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Try VDPs first to build confidence <span class="tag free">free</span></span>
+        <p class="task-desc">Vulnerability Disclosure Programs don't pay cash but have less competition and lower stakes — perfect for landing your first few accepted reports and building reputation/signal.</p>
+        <div class="task-links">
+          <a href="https://hackerone.com/directory/programs?type=vdp" target="_blank">VDP Programs</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" data-id="t54">
+      <div class="chk" onclick="toggle(this)"></div>
+      <div class="task-body">
+        <span class="task-title">Submit your first report — then keep going <span class="tag core">core</span></span>
+        <p class="task-desc">Expect duplicates and informatives early. Each one teaches you. Read public disclosed reports on HackerOne Hacktivity to learn what real winning bugs look like.</p>
+        <div class="task-links">
+          <a href="https://hackerone.com/hacktivity" target="_blank">HackerOne Hacktivity (disclosed reports)</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">⚖️ <b>Rules of engagement:</b> Only test assets explicitly in scope. Never test things you don't have permission to. Unauthorized testing is illegal — the program scope <i>is</i> your legal authorization.</div>
+  </section>
+
+  <div class="glow-line"></div>
+
+  <div class="milestone" style="margin-top:30px">
+    🔁 <b>This is a loop, not a finish line.</b> Real hunters revisit PortSwigger for new research, follow disclosed reports, and refine their recon constantly. Knock out a phase, then circle back deeper. Pace it around your coursework — consistency beats intensity.
+  </div>
+
+  <pre class="ascii">
+   ____   ___   ___    ___   _   _ _   _ _   _ _____ _____ ____
+  | __ ) / _ \ / _ \  / _ \ | | | | | | | \ | |_   _| ____|  _ \
+  |  _ \| | | | | | || | | || |_| | | | |  \| | | | |  _| | |_) |
+  | |_) | |_| | |_| || |_| ||  _  | |_| | |\  | | | | |___|  _ <
+  |____/ \___/ \___/  \___/ |_| |_|\___/|_| \_| |_| |_____|_| \_\
+  </pre>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>Note on legality & ethics:</b> Bug bounty hunting is legal only within an authorized program's defined scope. The Google Cybersecurity Certificate gave you the defensive lens — offensive work demands the same discipline pointed the other way. Hack what you're invited to hack.</p>
+    <p style="margin-top:10px">Progress is saved automatically in this browser. Links verified June 2026. Resource landscape shifts — PortSwigger, NahamSec, OWASP & the platforms above remain the durable core.</p>
+  </div>
+</footer>
+
+<script>
+  const KEY='offsec_bb_progress_v1';
+  const phaseMap={p0:['t01','t02','t03'],p1:['t11','t12','t13','t14','t15'],p2:['t21','t22','t23'],p3:['t31','t32','t33'],p4:['t41','t42','t43'],p5:['t51','t52','t53','t54']};
+  const phaseNames={p0:'00 Fundamentals',p1:'01 Web Attacks',p2:'02 Tooling',p3:'03 Recon',p4:'04 Practice',p5:'05 Go Live'};
+
+  function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+  function save(s){try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+
+  let state=load();
+
+  function applyState(){
+    document.querySelectorAll('.task').forEach(t=>{
+      const id=t.dataset.id;
+      if(state[id]){t.classList.add('done')}else{t.classList.remove('done')}
+    });
+    update();
+  }
+
+  function toggle(el){
+    const task=el.closest('.task');
+    const id=task.dataset.id;
+    state[id]=!state[id];
+    if(!state[id])delete state[id];
+    task.classList.toggle('done');
+    save(state);
+    update();
+  }
+
+  function update(){
+    const all=document.querySelectorAll('.task');
+    const total=all.length;
+    let done=0; all.forEach(t=>{if(state[t.dataset.id])done++});
+    const pct=total?Math.round(done/total*100):0;
+    document.getElementById('pct').textContent=pct+'%';
+    document.getElementById('barFill').style.width=pct+'%';
+    document.getElementById('doneCount').textContent=done;
+    document.getElementById('totalCount').textContent=total;
+
+    // per-phase progress + current phase
+    let current='—';
+    for(const p in phaseMap){
+      const ids=phaseMap[p];
+      const d=ids.filter(i=>state[i]).length;
+      const span=document.querySelector(`[data-prog="${p}"]`);
+      if(span)span.textContent=`[ ${d}/${ids.length} ]`;
+      if(current==='—' && d<ids.length) current=phaseNames[p];
+    }
+    if(done===total && total>0) current='✓ COMPLETE';
+    document.getElementById('curPhase').textContent=current;
+  }
+
+  function resetAll(){
+    if(confirm('Reset all progress? This cannot be undone.')){
+      state={}; save(state); applyState();
+    }
+  }
+
+  applyState();
+</script>
+</body>
+</html>
